@@ -1,0 +1,78 @@
+#!/usr/bin/env node
+
+const debug  = require("debug")("api:server");
+const http   = require("http");
+const util   = require("util"),
+      sockio = require("socket.io");
+
+const config = require("../config");
+const server = require("../server");
+const pjson  = require("../package.json");
+
+const host              = config.get("host");
+const port              = config.get("port");
+const wsport            = config.get("wsport");
+const app               = http.createServer(server);
+
+
+app.listen(port, host, () => {
+    process.title = pjson.name + " " + pjson.version;
+    process.title = util.format("%s %s listening on %s:%s", pjson.name, pjson.version, host, port);
+    debug("API service started on %s:%s", host, port);
+});
+
+
+// Open Socket.io connection
+// let io = sockio.listen(app, {log: false});
+// console.log("API Socket started");
+
+
+/**
+ * FIXME To be done later Web Socket Service for Explorer
+ */
+// when socket connection status changes
+// io.on('connection', async function(socket) {
+//     debug('a user connected');
+//
+//     let cursorBlock = await chainDBOperations.getBlockChange();
+//     await cursorBlock.each(async (err, change) => {
+//         // debug('Listening for block update...');
+//         let slice          = await chainDBOperations.getLatestBlocks();
+//         let blocksWithTime = {
+//             latestBlockTime: new Date(),
+//             blocks: slice
+//         };
+//         io.emit('block updated', blocksWithTime);
+//     });
+//
+//     let cursorTx = await chainDBOperations.getTransactionChange();
+//     await cursorTx.each(async (err, change) => {
+//         //debug('Listening for transaction update...');
+//         let slice = await chainDBOperations.getLatestTx();
+//         io.emit('transaction updated', slice);
+//     });
+//
+//     socket.on('disconnect', function() {
+//         debug('user disconnected');
+//     });
+// });
+
+
+/**
+ * Start http server and attach signal handlers.
+ */
+let stop = async function(msg) {
+    // await blockListener.disconnectChain();
+    process.exit();
+};
+
+process.on("uncaughtException", function(err) {
+    debug(err.stack);
+    debug("uncaughtException", err);
+}).on("SIGINT", function() {
+    stop("Received SIGINT Ctrl+C signal.API service shutdown.");
+}).on("SIGTERM", function() {
+    stop("Received SIGTERM signal. API service shutdown.");
+}).on("exit", function() {
+    stop("API service shutdown.");
+});
